@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Main Page - Tire Analysis</title>
+  <link rel="stylesheet" href="/static/css/main.css" />
+</head>
+
+<body>
+  <section class="carousel-section">
+    <div class="carousel-container">
+      <div class="carousel-box">
+        <h2>How Often Should You Change Your Tires?</h2>
+        <p>Regular maintenance is key! Typically, tires should be replaced every 6 years or around 40,000 miles.</p>
+      </div>
+      <div class="carousel-box">
+        <h2>Safety First</h2>
+        <p>Worn tires can lead to accidents. Driving on bald tires is very dangerous.</p>
+      </div>
+      <div class="carousel-box">
+        <h2>Fuel Efficiency Matters</h2>
+        <p>Worn tires cause higher fuel consumption. Keep your tires in top shape.</p>
+      </div>
+      <div class="carousel-box">
+        <h2>Smart Analysis with ML</h2>
+        <p>Upload a picture of your tire for remaining useful life estimation.</p>
+        <div class="spinner"><span class="gear">⚙️</span></div>
+      </div>
+      <div class="carousel-box">
+        <h2>Your Tire's RUL Chart</h2>
+        <div class="circular-progress"></div>
+        <div class="progress-text">—%</div>
+      </div>
+      <div class="carousel-box">
+        <h2>Keep It Updated!</h2>
+        <p>Upload new tire images every 2 months for accurate estimations.</p>
+      </div>
+      <div class="carousel-box">
+        <h2>Let's Upload Your First Image</h2>
+        <button class="upload-button" id="uploadButton">📷 Import Image</button>
+        <input type="file" id="fileInput" accept="image/*" style="display: none;" />
+      </div>
+    </div>
+    <div class="nav-button prev">←</div>
+    <div class="nav-button next">→</div>
+    <div class="step-indicator">
+      <div class="step-dot"></div>
+      <div class="step-dot"></div>
+      <div class="step-dot"></div>
+      <div class="step-dot"></div>
+      <div class="step-dot"></div>
+      <div class="step-dot"></div>
+      <div class="step-dot"></div>
+    </div>
+  </section>
+
+  <script type="module" src="/static/js/main.js"></script>
+</body>
+
+</html>

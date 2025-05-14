@@ -1,0 +1,113 @@
+# Ignore large ML model files
+models/
+*.h5
+*.pt
+*.onnx
+*.pb
+*.tflite
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Environment and IDE settings
+.env
+.venv
+env/
+venv/
+ENV/
+.vs/
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Build output
+build/
+dist/
+*.egg-info/
+
+# Git files (Railway handles Git differently)
+.git/
+.gitignore
+
+# Large data files
+*.sqlite
+*.db
+*.csv
+# Don't exclude all JSON files, just large ones
+# *.json
+dataset*.json
+large_*.json
+*.xlsx
+*.zip
+*.tar.gz
+*.rar
+*.7z
+*.pkl
+
+# Images and media files
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.bmp
+*.tiff
+*.ico
+*.svg
+*.mp4
+*.mov
+*.avi
+*.webm
+*.webp
+
+# Specific image directories
+app/static/images/large/
+app/static/uploads/*
+!app/static/uploads/.gitkeep
+tyre-images/
+data/images/
+images/
+raw_images/
+processed_images/
+training_data/
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.old
+*.log
+logs/
+tmp/
+temp/
+
+# Keep only necessary files
+# Do not exclude:
+# - app/ directory (except large subdirectories)
+# - requirements.txt
+# - Procfile
+# - railway.json
+# - env.config (for environment settings)
+
+# Exclude any other folders or files not needed for deployment
+Tyre-Finale/
+test/
+tests/
+docs/
+deploy/
+.github/
+bn.txt
+copy_to_git.py
+test.md
+examples/
+samples/
+notebooks/
+jupyter/
+.ipynb_checkpoints/ 

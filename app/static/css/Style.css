@@ -1,0 +1,216 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Arial', sans-serif;
+}
+
+body {
+  height: 100vh;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+}
+
+.welcome-section {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.welcome-box {
+  width: 500px;
+  padding: 40px;
+  border: 2px solid #1877f2;
+  border-radius: 15px;
+  text-align: center;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  position: relative;
+}
+
+.welcome-box h1 {
+  margin-bottom: 25px;
+}
+
+.welcome-box p {
+  margin: 15px 0 25px;
+}
+
+.button-container {
+  margin-top: 25px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+}
+
+.main-btn {
+  padding: 12px 30px;
+  font-size: 1.1rem;
+  background: transparent;
+  color: #1877f2;
+  border: 2px solid #1877f2;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: background 0.3s ease, color 0.3s ease, transform 0.3s ease;
+}
+
+.main-btn.smaller {
+  padding: 8px 20px;
+  font-size: 1rem;
+}
+
+.login-link {
+  color: #1877f2;
+  text-decoration: none;
+  position: relative;
+  transition: color 0.3s ease;
+}
+
+.login-link::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background-color: #1877f2;
+  transition: width 0.3s ease;
+}
+
+.login-link:hover::after {
+  width: 100%;
+}
+
+.down-container {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  transition: opacity 0.3s ease;
+}
+
+.down-button {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #1877f2;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.down-button:hover {
+  transform: translateY(5px);
+}
+
+.down-text {
+  font-size: 0.9rem;
+  color: #1877f2;
+  white-space: nowrap;
+}
+
+.carousel-section {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+.carousel-container {
+  width: 800px;
+  height: 500px;
+  position: relative;
+}
+
+.carousel-box {
+  width: 100%;
+  height: 100%;
+  border: 2px solid #1877f2;
+  border-radius: 15px;
+  padding: 40px;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  position: relative;
+}
+
+.carousel-box.active {
+  display: flex;
+}
+
+.carousel-box h2 {
+  margin-bottom: 20px;
+}
+
+.carousel-box p {
+  margin: 15px 0 25px;
+}
+
+.nav-button {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #1877f2;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.nav-button:hover {
+  transform: translateY(-50%) scale(1.1);
+}
+
+.nav-button.prev {
+  left: -60px;
+}
+
+.nav-button.next {
+  right: -60px;
+}
+
+.step-indicator {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+}
+
+.step-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #ccc;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.step-dot.active {
+  background: #1877f2;
+}
+
+.hidden {
+  opacity: 0;
+  pointer-events: none;
+}

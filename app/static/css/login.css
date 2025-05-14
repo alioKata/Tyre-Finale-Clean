@@ -1,0 +1,34 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+:root {
+  --brand: #4f46e5;
+  --bg: #f3f4f6;
+}
+* { box-sizing: border-box; margin:0; padding:0; font-family: 'Inter', sans-serif; }
+body {
+  display:flex; align-items:center; justify-content:center;
+  min-height:100vh; background: var(--bg);
+}
+.login-card {
+  background:#fff; padding:2rem; border-radius:12px;
+  box-shadow:0 4px 16px rgba(0,0,0,0.1); width:100%; max-width:360px;
+  text-align:center;
+}
+.login-card h1 {
+  margin-bottom:1rem; color: var(--brand);
+}
+.login-card form { display:grid; gap:1rem; }
+.login-card input {
+  padding:0.75rem; border:1px solid #d1d5db;
+  border-radius:8px; font-size:1rem;
+  transition:border-color .2s;
+}
+.login-card input:focus { outline:none; border-color:var(--brand); }
+.login-card button {
+  padding:0.75rem; background:var(--brand); color:#fff;
+  border:none; border-radius:8px; font-size:1rem; cursor:pointer;
+  transition:background .2s;
+}
+.login-card button:hover { background:#4338ca; }
+.error {
+  color:#dc2626; font-size:.875rem; height:1em;
+}

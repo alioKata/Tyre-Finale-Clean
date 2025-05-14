@@ -1,0 +1,179 @@
+/* upload.css */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+
+:root {
+  --brand: #1877f2;
+  --bg: #f0f2f5;
+  --card-bg: #fff;
+  --card-radius: 12px;
+  --input-border: #d1d5db;
+  --error-color: #dc2626;
+  --success-color: #10b981;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', sans-serif;
+}
+
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+.upload-card {
+  background: var(--card-bg);
+  padding: 2rem;
+  border-radius: var(--card-radius);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+}
+
+.upload-card h1 {
+  margin-bottom: 1rem;
+  color: var(--brand);
+}
+
+.file-input-container {
+  margin-bottom: 1rem;
+}
+
+#fileInput {
+  display: none;
+}
+
+.custom-file-label {
+  display: inline-block;
+  padding: 0.75rem 1rem;
+  background: var(--bg);
+  border: 1px solid var(--input-border);
+  border-radius: var(--card-radius);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: 100%;
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.custom-file-label:hover {
+  background: #e2e8f0;
+}
+
+.custom-file-label.file-selected {
+  background-color: #e6f7ff;
+  border-color: var(--brand);
+  color: var(--brand);
+}
+
+button[type="submit"] {
+  margin-top: 1rem;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  background: var(--brand);
+  color: white;
+  border: none;
+  border-radius: var(--card-radius);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: 100%;
+  max-width: 300px;
+}
+
+button[type="submit"]:hover {
+  background: #0056b3;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+button[type="submit"].success-button {
+  background-color: var(--success-color);
+  animation: pulse 1s;
+}
+
+.error-message {
+  color: var(--error-color);
+  font-size: 0.9rem;
+  margin-top: 0.75rem;
+  padding: 0.5rem;
+  border-radius: var(--card-radius);
+  background-color: rgba(220, 38, 38, 0.1);
+  transition: all 0.3s ease;
+}
+
+.hidden {
+  display: none;
+  opacity: 0;
+}
+
+#status {
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  color: var(--error-color);
+}
+
+.processing-alert {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 999;
+  animation: fadeIn 0.3s ease;
+}
+
+.processing-alert .alert-content {
+  background: var(--card-bg);
+  padding: 1.5rem 2rem;
+  border-radius: var(--card-radius);
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.processing-alert .spinner {
+  margin-top: 0.75rem;
+  font-size: 2rem;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.05);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}

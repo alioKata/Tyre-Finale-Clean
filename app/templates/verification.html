@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Verify Account • AliProject</title>
+  <link rel="stylesheet" href="/static/css/verification.css"/>
+</head>
+<body>
+  <div class="container">
+    <form id="verificationForm" class="form-container">
+      <h2>Verify Your Email</h2>
+      <p>We've sent a 6‑digit verification code to your email</p>
+      <div class="form-group">
+        <input
+          type="text"
+          id="verificationCode"
+          placeholder="Enter Code"
+          required
+          pattern="\d{6}"
+          inputmode="numeric"
+          maxlength="6"
+        />
+      </div>
+      <button type="submit" class="submit-btn">Verify</button>
+      <p class="error" id="errorMsg"></p>
+    </form>
+  </div>
+  <script type="module" src="/static/js/verification.js"></script>
+</body>
+</html>

@@ -1,0 +1,118 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+.env
+venv/
+env/
+.venv/
+ENV/
+FinaleTYRE/
+
+# Testing
+.pytest_cache/
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+tests/
+pytest.ini
+
+# Database
+*.db
+*.sqlite3
+*.sqlite
+app.db
+
+# ML model files (large binary files)
+*.h5
+*.pt
+*.onnx
+*.pb
+*.tflite
+models/*.h5
+models/h5/
+models/tensorflow/
+models/custom_model.h5
+models/hybrid_model.h5
+models.rar
+
+# Folders with large/unnecessary data
+data/
+tyre-images/
+app/static/uploads/*
+!app/static/uploads/.gitkeep
+xx/
+results/
+Earaser/
+
+# System files
+.DS_Store
+.idea/
+.vscode/
+.ipynb_checkpoints/
+*.swp
+*.swo
+
+# Logs
+logs/
+*.log
+
+# Specific large files
+dataset*.json
+large_*.json
+*.pkl
+*.zip
+*.tar.gz
+*.rar
+app.zip
+micghigan.pdf
+export.txt
+query
+
+# Testing/utility scripts
+test_fuel.py
+check_db.py
+db_browser.py
+view_images.py
+update_fuel_data.py
+view_fuel_data.py
+print_settings.py
+hybrid_model.py
+test.md
+bn.txt
+copy_to_git.py
+
+# DO NOT ignore these important files
+!requirements.txt
+!Procfile
+!railway.json
+!app/
+!README.md
+!README_CHANGES.md
+!env.config 

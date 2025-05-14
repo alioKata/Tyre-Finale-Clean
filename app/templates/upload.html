@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Upload Tire Image • AliProject</title>
+  <link rel="stylesheet" href="/static/css/upload.css" />
+</head>
+
+<body>
+  <div class="upload-card">
+    <h1>Upload a Tire Photo</h1>
+    <form id="uploadForm">
+      <div class="file-input-container">
+        <label for="fileInput" id="fileLabel" class="custom-file-label">📁 Choose Image…</label>
+        <input type="file" id="fileInput" accept="image/*" />
+      </div>
+      <button type="submit" id="uploadButton">Upload</button>
+      <div id="error-message" class="error-message hidden">You have to upload an image to proceed</div>
+    </form>
+    <p id="status"></p>
+  </div>
+
+  <script type="module">
+    const fileInput = document.getElementById("fileInput");
+    const fileLabel = document.getElementById("fileLabel");
+    const uploadButton = document.getElementById("uploadButton");
+    const errorMessage = document.getElementById("error-message");
+    let fileSelected = false;
+
+    // Update label when file is selected
+    fileInput.addEventListener("change", () => {
+      const file = fileInput.files[0];
+      if (file) {
+        fileSelected = true;
+        const fileName = file.name.length > 20 ? file.name.substring(0, 17) + '...' : file.name;
+        fileLabel.textContent = fileName;
+        fileLabel.classList.add("file-selected");
+        errorMessage.classList.add("hidden");
+      } else {
+        fileSelected = false;
+        fileLabel.textContent = "📁 Choose Image…";
+        fileLabel.classList.remove("file-selected");
+      }
+    });
+
+    document.getElementById("uploadForm").addEventListener("submit", async e => {
+      e.preventDefault();
+      const file = fileInput.files[0];
+
+      // Check if file is selected
+      if (!file) {
+        errorMessage.classList.remove("hidden");
+        return;
+      }
+
+      // auth check
+      const token = localStorage.getItem("token");
+      if (!token) return window.location.href = "/login";
+
+      // Change button to "Voilà" with animation
+      uploadButton.textContent = "Voilà";
+      uploadButton.classList.add("success-button");
+
+      // Wait for the animation to complete before proceeding
+      setTimeout(async () => {
+        // Create and show the processing overlay
+        const overlay = document.createElement("div");
+        overlay.className = "processing-alert";
+        overlay.innerHTML = `<div class="alert-content">
+          <p>Processing your image… please wait.</p>
+          <div class="spinner">⚙️</div>
+        </div>`;
+        document.body.appendChild(overlay);
+
+        // send
+        const form = new FormData();
+        form.append("file", file);
+        try {
+          const res = await fetch("/api/tire/upload", {
+            method: "POST",
+            headers: { "Authorization": `Bearer ${token}` },
+            body: form
+          });
+          if (!res.ok) {
+            const { detail } = await res.json().catch(() => ({}));
+            throw new Error(detail || res.statusText);
+          }
+          const rec = await res.json();
+          localStorage.setItem("latestTireRecord", JSON.stringify(rec));
+          window.location.href = "/result";
+        } catch (err) {
+          document.getElementById("status").textContent = `Error: ${err.message}`;
+          uploadButton.textContent = "Upload";
+          uploadButton.classList.remove("success-button");
+        } finally {
+          overlay.remove();
+        }
+      }, 1000); // Wait 1 second after the button animation
+    });
+  </script>
+</body>
+
+</html>

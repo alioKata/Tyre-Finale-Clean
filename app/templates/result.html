@@ -1,0 +1,47 @@
+<!-- app/templates/result.html -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tire Estimation Result • AliProject</title>
+  <link rel="stylesheet" href="/static/css/result.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1"></script>
+</head>
+
+<body>
+  <div class="result-container">
+    <div class="result-column left-column">
+      <div class="result-box left-box">
+        <p id="nextUploadDate">Next upload is on: —</p>
+        <button id="newUploadButton" class="upload-button">Upload New Picture</button>
+        <input type="file" id="newFileInput" accept="image/*" style="display: none;" />
+        <button id="backButton" class="upload-button" style="margin-top: 15px;">
+          Main Page
+        </button>
+      </div>
+      <div class="result-box right-box">
+        <h2>Tire Life Estimation</h2>
+        <div class="circular-progress" id="resultChart"></div>
+        <div class="progress-text" id="resultPercentage">—%</div>
+      </div>
+    </div>
+
+    <div class="result-column right-column">
+      <div class="result-box fuel-box">
+        <h2>Fuel Consumption Impact</h2>
+        <div style="height: 280px;">
+          <canvas id="fuelConsumptionChart"></canvas>
+        </div>
+        <div class="fuel-details">
+          <div id="extraCostVsNew" class="cost-detail">Annual Extra Cost vs. New Tire: —</div>
+          <div id="potentialSavingsVsWorn" class="savings-detail">Potential Savings vs. Worn Tire: —</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script type="module" src="/static/js/result.js"></script>
+</body>
+
+</html>
