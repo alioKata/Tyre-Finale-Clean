@@ -1,4 +1,7 @@
 #!/bin/bash
+# Install Python requirements
+pip install -r requirements.txt
+
 # Install gdown to download from Google Drive
 pip install gdown
 
