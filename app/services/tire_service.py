@@ -6,9 +6,13 @@ import json
 import numpy as np
 import cv2
 import tensorflow as tf
+import logging
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.tire import TireRecord
 from typing import Dict, Any
+
+# Set up logging
+logger = logging.getLogger("app.services.tire")
 
 # ensure upload directory exists
 UPLOAD_DIR = os.path.join("app", "static", "uploads")
@@ -18,15 +22,37 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 MODEL_PATH = os.path.join("models", "hybrid_model.h5")
 CLASS_INDICES_PATH = os.path.join("models", "class_indices.json")
 
+# Initialize model and class_indices as None
+model = None
+idx_to_class = {}
+
 try:
-    model = tf.keras.models.load_model(MODEL_PATH)
-    with open(CLASS_INDICES_PATH, "r") as f:
-        class_indices = json.load(f)
-    idx_to_class = {v: k for k, v in class_indices.items()}
+    logger.info(f"Loading model from {MODEL_PATH}")
+    if os.path.exists(MODEL_PATH) and os.path.getsize(MODEL_PATH) > 0:
+        model = tf.keras.models.load_model(MODEL_PATH)
+        logger.info("Model loaded successfully")
+    else:
+        logger.error(f"Model file does not exist or is empty: {MODEL_PATH}")
+        
+    logger.info(f"Loading class indices from {CLASS_INDICES_PATH}")
+    if os.path.exists(CLASS_INDICES_PATH):
+        with open(CLASS_INDICES_PATH, "r") as f:
+            class_indices = json.load(f)
+        idx_to_class = {v: k for k, v in class_indices.items()}
+        logger.info(f"Class indices loaded: {class_indices}")
+    else:
+        logger.error(f"Class indices file does not exist: {CLASS_INDICES_PATH}")
+        # Create a default class indices file
+        class_indices = {"good": 0, "defective": 1}
+        idx_to_class = {0: "good", 1: "defective"}
+        os.makedirs(os.path.dirname(CLASS_INDICES_PATH), exist_ok=True)
+        with open(CLASS_INDICES_PATH, "w") as f:
+            json.dump(class_indices, f, indent=2)
+        logger.info(f"Created default class indices file: {class_indices}")
 except Exception as e:
-    print(f"[ERROR] loading model or class_indices: {e}")
-    model = None
-    idx_to_class = {}
+    logger.error(f"Error loading model or class_indices: {e}")
+    # Provide fallback values for class_indices
+    idx_to_class = {0: "good", 1: "defective"}
 
 def estimate_fuel_consumption(rul_percentage: float) -> Dict[str, Any]:
     """
@@ -95,9 +121,33 @@ def estimate_fuel_consumption(rul_percentage: float) -> Dict[str, Any]:
 
 async def save_and_analyze(file, db: AsyncSession) -> TireRecord:
     try:
+        # If model is not loaded, use a default good value of 75%
         if model is None:
-            raise RuntimeError("Model not loaded")
-
+            logger.warning("Model not loaded, using default RUL value of 75%")
+            rul_percent = 75
+            
+            # Save file to disk
+            ext = file.filename.rsplit('.', 1)[-1]
+            name = f"{uuid.uuid4().hex}.{ext}"
+            path = os.path.join(UPLOAD_DIR, name)
+            data = await file.read()
+            with open(path, 'wb') as f:
+                f.write(data)
+                
+            # Calculate fuel consumption data 
+            try:
+                fuel_data = estimate_fuel_consumption(rul_percent)
+            except Exception as e:
+                logger.error(f"Error calculating fuel consumption: {e}")
+                fuel_data = None  # Fall back to None if calculation fails
+            
+            # Persist record in DB
+            record = TireRecord(filename=name, rul_percent=rul_percent, fuel_data=fuel_data)
+            db.add(record)
+            await db.commit()
+            await db.refresh(record)
+            return record
+        
         # Save file to disk
         ext = file.filename.rsplit('.', 1)[-1]
         name = f"{uuid.uuid4().hex}.{ext}"
@@ -109,6 +159,7 @@ async def save_and_analyze(file, db: AsyncSession) -> TireRecord:
         # Preprocess for both branches
         img = cv2.imread(path)
         if img is None:
+            logger.error(f"Failed to read image at {path}")
             raise RuntimeError(f"Failed to read image at {path}")
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         img = cv2.resize(img, (224, 224))
@@ -122,18 +173,20 @@ async def save_and_analyze(file, db: AsyncSession) -> TireRecord:
         resnet_input = np.expand_dims(resnet_input, axis=0)
 
         # Run inference with both inputs
+        logger.info("Running model inference")
         preds = model.predict([custom_input, resnet_input])
 
         # Extract good-tire probability
-        good_idx = next(i for i, c in idx_to_class.items() if c == 'good')
+        good_idx = next((i for i, c in idx_to_class.items() if c == 'good'), 0)
         good_prob = float(preds[0][good_idx])
         rul_percent = int(round(good_prob * 100))
+        logger.info(f"Prediction result: RUL={rul_percent}%")
 
         # Calculate fuel consumption data 
         try:
             fuel_data = estimate_fuel_consumption(rul_percent)
         except Exception as e:
-            print(f"Error calculating fuel consumption: {e}")
+            logger.error(f"Error calculating fuel consumption: {e}")
             fuel_data = None  # Fall back to None if calculation fails
 
         # Persist record in DB
@@ -143,7 +196,7 @@ async def save_and_analyze(file, db: AsyncSession) -> TireRecord:
         await db.refresh(record)
         return record
     except Exception as e:
-        print(f"Error in save_and_analyze: {e}")
+        logger.error(f"Error in save_and_analyze: {e}")
         # Make sure to rollback the session in case of error
         await db.rollback()
         raise

@@ -3,9 +3,12 @@ services:
     name: aliproject
     runtime: python
     buildCommand: chmod +x build.sh && ./build.sh
-    startCommand: pip install -r requirements.txt && pip install gdown && chmod +x build.sh && ./build.sh
+    startCommand: chmod +x start.sh && ./start.sh
     envVars:
       - key: PORT
         value: 8000
       - key: SECRET_KEY
-        generateValue: true 
+        generateValue: true
+    healthCheckPath: /healthcheck
+    healthCheckTimeout: 60
+    autoDeploy: false 
