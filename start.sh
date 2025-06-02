@@ -1,4 +1,8 @@
 #!/bin/bash
+
+# Set execution permission for this script
+chmod +x start.sh
+
 # Set PORT environment variable if not already set
 export PORT=${PORT:-8000}
 echo "Starting app on port: $PORT"
