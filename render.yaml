@@ -11,4 +11,5 @@ services:
         generateValue: true
     healthCheckPath: /healthcheck
     healthCheckTimeout: 60
-    autoDeploy: false 
+    autoDeploy: false
+    plan: free 

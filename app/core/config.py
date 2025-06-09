@@ -1,14 +1,25 @@
 # app/core/config.py
 
 import os
+import logging
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Set up logging
+logger = logging.getLogger("app.config")
+
+# Get PORT from environment with debug logging
+env_port = os.environ.get("PORT")
+logger.info(f"Environment PORT value: {env_port}")
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file="env.config", env_file_encoding="utf-8")
 
     APP_NAME: str = "AliProject API"
     HOST: str = "0.0.0.0"  # Changed from 127.0.0.1 to 0.0.0.0 for deployment
-    PORT: int = int(os.environ.get("PORT", 8000))
+    
+    # For PORT, we first check environment variable, then fallback to 8000
+    # Important for Render.com deployment
+    PORT: int = int(env_port) if env_port else 8000
 
     # JWT settings
     SECRET_KEY: str = os.environ.get("SECRET_KEY", "your-jwt-secret")
@@ -31,3 +42,4 @@ class Settings(BaseSettings):
     CLASS_INDICES_PATH: str = "models/class_indices.json"
 
 settings = Settings()
+logger.info(f"Initialized settings with PORT={settings.PORT}, HOST={settings.HOST}")

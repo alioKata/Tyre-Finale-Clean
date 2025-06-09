@@ -2,6 +2,7 @@ from pathlib import Path
 import os
 import json
 import logging
+import sys
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
@@ -14,6 +15,12 @@ from app.core.config import settings
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("app")
+
+# Log system information
+logger.info(f"Python version: {sys.version}")
+logger.info(f"Current directory: {os.getcwd()}")
+logger.info(f"Environment PORT: {os.environ.get('PORT')}")
+logger.info(f"Settings PORT: {settings.PORT}")
 
 # Base directory of this module
 BASE_DIR = Path(__file__).parent
