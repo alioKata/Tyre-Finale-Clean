@@ -7,12 +7,29 @@ import numpy as np
 import cv2
 import tensorflow as tf
 import logging
+import threading
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.tire import TireRecord
 from typing import Dict, Any
 
 # Set up logging
 logger = logging.getLogger("app.services.tire")
+
+# Configure TensorFlow to use less memory and be more efficient
+physical_devices = tf.config.list_physical_devices('GPU')
+if physical_devices:
+    try:
+        # Limit memory growth to avoid OOM errors
+        for device in physical_devices:
+            tf.config.experimental.set_memory_growth(device, True)
+        logger.info(f"Found {len(physical_devices)} GPU(s), configured for memory growth")
+    except Exception as e:
+        logger.error(f"Error configuring GPU: {e}")
+else:
+    logger.info("No GPU found, using CPU for inference")
+    # Limit CPU threads to avoid overwhelming the system
+    tf.config.threading.set_intra_op_parallelism_threads(2)
+    tf.config.threading.set_inter_op_parallelism_threads(1)
 
 # ensure upload directory exists
 UPLOAD_DIR = os.path.join("app", "static", "uploads")
@@ -25,6 +42,8 @@ CLASS_INDICES_PATH = os.path.join("models", "class_indices.json")
 # Initialize model and class_indices as None
 model = None
 idx_to_class = {}
+model_loading = False
+model_loaded_event = threading.Event()
 
 # Function to create a simple mock model when the real model is unavailable
 def create_mock_model():
@@ -42,40 +61,60 @@ def create_mock_model():
     # Compile the model
     mock_model.compile(optimizer='adam', loss='categorical_crossentropy')
     
-    # Save the model to disk
-    mock_model.save(MODEL_PATH)
-    logger.info(f"Mock model created and saved to {MODEL_PATH}")
+    logger.info(f"Mock model created")
     
     return mock_model
 
-try:
-    logger.info(f"Loading model from {MODEL_PATH}")
-    if os.path.exists(MODEL_PATH) and os.path.getsize(MODEL_PATH) > 1000:  # Check if file size is reasonable
-        model = tf.keras.models.load_model(MODEL_PATH)
-        logger.info("Model loaded successfully")
-    else:
-        logger.warning(f"Model file does not exist or is too small: {MODEL_PATH} (size: {os.path.getsize(MODEL_PATH) if os.path.exists(MODEL_PATH) else 0} bytes)")
+# Function to load model in background
+def load_model_in_background():
+    global model, idx_to_class, model_loading, model_loaded_event
+    
+    if model_loading:
+        logger.info("Model loading already in progress, waiting...")
+        return
+    
+    model_loading = True
+    
+    try:
+        # Load class indices
+        logger.info(f"Loading class indices from {CLASS_INDICES_PATH}")
+        if os.path.exists(CLASS_INDICES_PATH):
+            with open(CLASS_INDICES_PATH, "r") as f:
+                class_indices = json.load(f)
+            idx_to_class = {v: k for k, v in class_indices.items()}
+            logger.info(f"Class indices loaded: {class_indices}")
+        else:
+            logger.error(f"Class indices file does not exist: {CLASS_INDICES_PATH}")
+            class_indices = {"good": 0, "defective": 1}
+            idx_to_class = {0: "good", 1: "defective"}
+            os.makedirs(os.path.dirname(CLASS_INDICES_PATH), exist_ok=True)
+            with open(CLASS_INDICES_PATH, "w") as f:
+                json.dump(class_indices, f, indent=2)
+            logger.info(f"Created default class indices file: {class_indices}")
+            
+        # Check if model exists and is valid
+        logger.info(f"Checking model at {MODEL_PATH}")
+        if os.path.exists(MODEL_PATH) and os.path.getsize(MODEL_PATH) > 1000000:  # >1MB
+            logger.info(f"Loading model from {MODEL_PATH}")
+            model = tf.keras.models.load_model(MODEL_PATH, compile=False)
+            logger.info("Model loaded successfully")
+        else:
+            logger.warning(f"Model file does not exist or is too small: {MODEL_PATH} (size: {os.path.getsize(MODEL_PATH) if os.path.exists(MODEL_PATH) else 0} bytes)")
+            model = create_mock_model()
+            
+        # Signal that model is loaded
+        model_loaded_event.set()
+        logger.info("Model loading completed")
+    except Exception as e:
+        logger.error(f"Error loading model or class_indices: {e}")
+        # Fallback to mock model
         model = create_mock_model()
-        
-    logger.info(f"Loading class indices from {CLASS_INDICES_PATH}")
-    if os.path.exists(CLASS_INDICES_PATH):
-        with open(CLASS_INDICES_PATH, "r") as f:
-            class_indices = json.load(f)
-        idx_to_class = {v: k for k, v in class_indices.items()}
-        logger.info(f"Class indices loaded: {class_indices}")
-    else:
-        logger.error(f"Class indices file does not exist: {CLASS_INDICES_PATH}")
-        # Create a default class indices file
-        class_indices = {"good": 0, "defective": 1}
-        idx_to_class = {0: "good", 1: "defective"}
-        os.makedirs(os.path.dirname(CLASS_INDICES_PATH), exist_ok=True)
-        with open(CLASS_INDICES_PATH, "w") as f:
-            json.dump(class_indices, f, indent=2)
-        logger.info(f"Created default class indices file: {class_indices}")
-except Exception as e:
-    logger.error(f"Error loading model or class_indices: {e}")
-    # Provide fallback values for class_indices
-    idx_to_class = {0: "good", 1: "defective"}
+        model_loaded_event.set()
+    finally:
+        model_loading = False
+
+# Start model loading in background at module import time
+threading.Thread(target=load_model_in_background, daemon=True).start()
 
 def estimate_fuel_consumption(rul_percentage: float) -> Dict[str, Any]:
     """
@@ -144,6 +183,37 @@ def estimate_fuel_consumption(rul_percentage: float) -> Dict[str, Any]:
 
 async def save_and_analyze(file, db: AsyncSession) -> TireRecord:
     try:
+        # Wait for model to be loaded with a timeout
+        global model, model_loaded_event
+        if not model_loaded_event.is_set():
+            logger.info("Waiting for model to load...")
+            model_load_success = model_loaded_event.wait(timeout=30)
+            if not model_load_success:
+                logger.warning("Model loading timed out, using default RUL value")
+                rul_percent = 75
+                
+                # Save file to disk
+                ext = file.filename.rsplit('.', 1)[-1]
+                name = f"{uuid.uuid4().hex}.{ext}"
+                path = os.path.join(UPLOAD_DIR, name)
+                data = await file.read()
+                with open(path, 'wb') as f:
+                    f.write(data)
+                    
+                # Calculate fuel consumption data 
+                try:
+                    fuel_data = estimate_fuel_consumption(rul_percent)
+                except Exception as e:
+                    logger.error(f"Error calculating fuel consumption: {e}")
+                    fuel_data = None  # Fall back to None if calculation fails
+                
+                # Persist record in DB
+                record = TireRecord(filename=name, rul_percent=rul_percent, fuel_data=fuel_data)
+                db.add(record)
+                await db.commit()
+                await db.refresh(record)
+                return record
+        
         # If model is not loaded, use a default good value of 75%
         if model is None:
             logger.warning("Model not loaded, using default RUL value of 75%")

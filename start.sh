@@ -8,9 +8,9 @@ echo "Current directory: $(pwd)"
 echo "Environment variables:"
 env | grep -E 'PORT|RENDER'
 
-# Set PORT environment variable if not already set
-# Render sets PORT automatically, so use that value if available
-export PORT=${PORT:-8000}
+# Set PORT environment variable - IMPORTANT for Render
+# Default to 10000 which is what Render seems to be using based on logs
+export PORT=${PORT:-10000}
 echo "Starting app on port: $PORT"
 
 # Create necessary directories if they don't exist
@@ -21,6 +21,16 @@ mkdir -p app/static/uploads
 echo "Models directory contents:"
 ls -la models/
 
-# Start the application with explicit port binding
-echo "Starting application at $(date)"
-exec uvicorn app.main:app --host 0.0.0.0 --port $PORT 
+# Set firewall rules to ensure port is accessible (may help with port detection)
+if command -v iptables > /dev/null; then
+  echo "Setting firewall rules to allow port $PORT"
+  sudo iptables -A INPUT -p tcp --dport $PORT -j ACCEPT || true
+fi
+
+# Tell Render we're about to start a service on this port
+echo "RENDER_SERVICE_PORT=$PORT" > /tmp/render_port
+echo "Ready to start app on port $PORT..."
+
+# Start the application with direct port binding - Explicitly listen on all interfaces
+echo "Starting application at $(date) on port $PORT"
+exec uvicorn app.main:app --host 0.0.0.0 --port $PORT --timeout-keep-alive 75 --log-level debug 

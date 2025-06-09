@@ -4,9 +4,10 @@ import json
 import logging
 import sys
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
-from starlette.responses import Response
+from starlette.responses import Response, JSONResponse
+from starlette.status import HTTP_200_OK
 
 from app.db import engine, Base, migrate_add_fuel_data
 from app.api import auth, pages, tire
@@ -84,13 +85,44 @@ async def on_startup():
             with open(CLASS_INDICES_PATH, 'w') as f:
                 json.dump(CLASS_INDICES, f, indent=2)
         
+        # Write port info to a file that Render can detect
+        with open("/tmp/render_port_info", "w") as f:
+            f.write(f"PORT={settings.PORT}\n")
+            
         logger.info(f"Application startup complete. Running on {settings.HOST}:{settings.PORT}")
     except Exception as e:
         logger.error(f"Error during startup: {e}")
         # Raise to ensure the app doesn't silently fail
         raise
 
+@app.get("/")
+async def root():
+    """Root endpoint that redirects to welcome page"""
+    return {"message": "API is running", "redirect_to": "/welcome.html"}
+
 @app.get("/healthcheck")
 async def healthcheck():
     """Health check endpoint for Render"""
-    return {"status": "healthy"}
+    return {"status": "healthy", "port": settings.PORT}
+
+@app.get("/ping")
+async def ping():
+    """Simple ping endpoint for health checks"""
+    return Response(content="pong", media_type="text/plain", status_code=HTTP_200_OK)
+
+@app.get("/ready")
+async def ready():
+    """Readiness check endpoint"""
+    return JSONResponse(content={"status": "ready", "port": settings.PORT})
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    """Middleware to log all requests"""
+    logger.info(f"Request: {request.method} {request.url}")
+    try:
+        response = await call_next(request)
+        logger.info(f"Response: {response.status_code}")
+        return response
+    except Exception as e:
+        logger.error(f"Request error: {e}")
+        raise

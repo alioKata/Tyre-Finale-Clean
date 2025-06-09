@@ -6,10 +6,11 @@ services:
     startCommand: chmod +x start.sh && ./start.sh
     envVars:
       - key: PORT
-        value: 8000
+        value: 10000
       - key: SECRET_KEY
         generateValue: true
     healthCheckPath: /healthcheck
-    healthCheckTimeout: 60
+    healthCheckTimeout: 300
     autoDeploy: false
-    plan: free 
+    plan: free
+    ipAllowList: []  # Empty array means allow all IPs 
