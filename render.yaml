@@ -9,8 +9,15 @@ services:
         value: 10000
       - key: SECRET_KEY
         generateValue: true
-    healthCheckPath: /healthcheck
-    healthCheckTimeout: 300
+    healthCheckPath: /ping
+    healthCheckTimeout: 600
     autoDeploy: false
     plan: free
-    ipAllowList: []  # Empty array means allow all IPs 
+    ipAllowList: []  # Empty array means allow all IPs
+    properties:
+      port: 10000
+      # Increasing all timeouts to accommodate model loading
+      startupTimeout: 600
+      initialHealthcheckTimeout: 600
+      healthcheckTimeout: 600
+      shutdownTimeout: 60 

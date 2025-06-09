@@ -22,10 +22,16 @@ else
   echo "Model file already exists, skipping download. Size: $(du -h models/hybrid_model.h5 | cut -f1)"
 fi
 
-# Create port binding indicator file to ensure render knows we'll bind to a port
-echo "Ensuring web service binds to port: ${PORT:-8000}"
+# Create port binding indicator files to ensure render knows we'll bind to a port
+PORT=${PORT:-10000}
+echo "Ensuring web service binds to port: $PORT"
+
+# Create multiple indicator files - Render checks for these
 mkdir -p tmp
-echo "PORT=${PORT:-8000}" > tmp/port_info.txt
+echo "PORT=$PORT" > tmp/port_info.txt
+echo "port=$PORT" > .render-port-info
+echo "PORT=$PORT" > /tmp/render_port
+echo "PORT=$PORT" > /tmp/port
 
 # Set permissions for the start script
 chmod +x start.sh
@@ -39,4 +45,4 @@ echo "Model directory contents:"
 ls -la models/
 echo "Environment variables:"
 env | grep -E 'PORT|RENDER'
-echo "Setup complete - PORT is set to: ${PORT:-8000}" 
+echo "Setup complete - PORT is set to: $PORT" 

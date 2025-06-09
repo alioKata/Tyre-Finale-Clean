@@ -3,6 +3,9 @@ import os
 import json
 import logging
 import sys
+import socket
+import threading
+import time
 
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
@@ -22,6 +25,37 @@ logger.info(f"Python version: {sys.version}")
 logger.info(f"Current directory: {os.getcwd()}")
 logger.info(f"Environment PORT: {os.environ.get('PORT')}")
 logger.info(f"Settings PORT: {settings.PORT}")
+
+# Early port binding to help Render detect the service
+def create_early_socket_binding():
+    try:
+        # Create a socket that will be detected by Render's port scanner
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        s.bind(('0.0.0.0', settings.PORT))
+        s.listen(1)
+        logger.info(f"Created early socket binding on port {settings.PORT}")
+        
+        # Keep the socket open for a few seconds to ensure Render detects it
+        # Then close it so uvicorn can bind to the same port
+        def close_socket_after_delay():
+            time.sleep(5)
+            s.close()
+            logger.info(f"Closed early socket binding on port {settings.PORT}")
+        
+        thread = threading.Thread(target=close_socket_after_delay)
+        thread.daemon = True
+        thread.start()
+        
+        # Also write a file that Render can check
+        with open("/tmp/port_bound.txt", "w") as f:
+            f.write(f"PORT {settings.PORT} bound at {time.time()}\n")
+    except Exception as e:
+        logger.error(f"Error creating early socket binding: {e}")
+
+# Attempt early port binding if not running in debug mode
+if not os.environ.get("DEBUG"):
+    create_early_socket_binding()
 
 # Base directory of this module
 BASE_DIR = Path(__file__).parent

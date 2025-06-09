@@ -27,6 +27,24 @@ if command -v iptables > /dev/null; then
   sudo iptables -A INPUT -p tcp --dport $PORT -j ACCEPT || true
 fi
 
+# Create a socket listener immediately to help Render detect the port
+# Use netcat if available, otherwise use Python
+echo "Creating initial port listener on $PORT to help Render detect port..."
+if command -v nc > /dev/null; then
+  # Start nc in background to listen on the port temporarily
+  nc -l -p $PORT &
+  NC_PID=$!
+  echo "Started netcat listener with PID: $NC_PID"
+  sleep 2
+  # Kill the netcat process after Render has had time to detect it
+  kill $NC_PID || true
+elif command -v python3 > /dev/null; then
+  # Use Python as an alternative
+  python3 -c "import socket; s=socket.socket(); s.bind(('0.0.0.0', $PORT)); s.listen(1); print('Python socket listening temporarily on port $PORT'); import time; time.sleep(2); s.close()" &
+  echo "Started Python socket listener"
+  sleep 3
+fi
+
 # Tell Render we're about to start a service on this port
 echo "RENDER_SERVICE_PORT=$PORT" > /tmp/render_port
 echo "Ready to start app on port $PORT..."
