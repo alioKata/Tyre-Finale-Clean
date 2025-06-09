@@ -3,23 +3,22 @@ services:
     name: aliproject
     runtime: python
     buildCommand: chmod +x build.sh && ./build.sh
-    startCommand: chmod +x start.sh && ./start.sh
+    startCommand: chmod +x simple_start.sh && ./simple_start.sh
     envVars:
       - key: PORT
         value: 10000
       - key: SECRET_KEY
         generateValue: true
     healthCheckPath: /ping
-    healthCheckTimeout: 600
+    healthCheckTimeout: 180
     autoDeploy: false
     plan: free
     ipAllowList: []  # Empty array means allow all IPs
     properties:
       port: 10000
-      # Increasing all timeouts to accommodate model loading
-      startupTimeout: 900
-      initialHealthcheckTimeout: 900
-      healthcheckTimeout: 900
+      startupTimeout: 300
+      initialHealthcheckTimeout: 180
+      healthcheckTimeout: 180
       shutdownTimeout: 60
       restartPolicyType: ON_FAILURE
       restartPolicyMaxRetries: 5 
