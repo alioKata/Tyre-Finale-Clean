@@ -12,15 +12,9 @@ echo '{
 }' > models/class_indices.json
 echo "Created class_indices.json file"
 
-# Download the model file ONLY if it doesn't exist or is too small
-if [ ! -f "models/hybrid_model.h5" ] || [ $(du -k "models/hybrid_model.h5" | cut -f1) -lt 1000 ]; then
-  echo "Downloading hybrid_model.h5 from Google Drive..."
-  pip install gdown
-  gdown 178L9TCIh9IN_Pgw31-0Q4fWaHsgPZTTS -O models/hybrid_model.h5
-  echo "Download completed. File size: $(du -h models/hybrid_model.h5 | cut -f1)"
-else
-  echo "Model file already exists, skipping download. Size: $(du -h models/hybrid_model.h5 | cut -f1)"
-fi
+# Instead of downloading the model file at build time, add gdown to ensure it's available
+pip install gdown
+echo "Installed gdown for on-demand model downloading"
 
 # Create port binding indicator files to ensure render knows we'll bind to a port
 PORT=${PORT:-10000}
@@ -41,8 +35,6 @@ mkdir -p data/users
 mkdir -p app/static/uploads
 
 # Print information for debugging
-echo "Model directory contents:"
-ls -la models/
 echo "Environment variables:"
 env | grep -E 'PORT|RENDER'
 echo "Setup complete - PORT is set to: $PORT" 

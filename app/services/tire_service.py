@@ -8,6 +8,8 @@ import cv2
 import tensorflow as tf
 import logging
 import threading
+import requests
+import subprocess
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.tire import TireRecord
 from typing import Dict, Any
@@ -38,12 +40,58 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 # load model & class indices once
 MODEL_PATH = os.path.join("models", "hybrid_model.h5")
 CLASS_INDICES_PATH = os.path.join("models", "class_indices.json")
+MODEL_GOOGLE_DRIVE_ID = "178L9TCIh9IN_Pgw31-0Q4fWaHsgPZTTS"
 
 # Initialize model and class_indices as None
 model = None
 idx_to_class = {}
 model_loading = False
 model_loaded_event = threading.Event()
+
+# Function to download model from Google Drive
+def download_model_from_gdrive():
+    """Download the model file from Google Drive if it doesn't exist"""
+    if os.path.exists(MODEL_PATH) and os.path.getsize(MODEL_PATH) > 1000000:  # >1MB
+        logger.info(f"Model file already exists at {MODEL_PATH}")
+        return True
+    
+    logger.info(f"Downloading model from Google Drive (ID: {MODEL_GOOGLE_DRIVE_ID})")
+    os.makedirs(os.path.dirname(MODEL_PATH), exist_ok=True)
+    
+    try:
+        # First try using gdown
+        try:
+            import gdown
+            gdown.download(id=MODEL_GOOGLE_DRIVE_ID, output=MODEL_PATH, quiet=False)
+            if os.path.exists(MODEL_PATH) and os.path.getsize(MODEL_PATH) > 1000000:
+                logger.info(f"Successfully downloaded model using gdown: {os.path.getsize(MODEL_PATH)} bytes")
+                return True
+        except Exception as e:
+            logger.warning(f"Failed to download using gdown: {e}")
+        
+        # If gdown fails, try subprocess
+        logger.info("Attempting download using subprocess call to gdown")
+        try:
+            result = subprocess.run(
+                ["python", "-m", "gdown", MODEL_GOOGLE_DRIVE_ID, "-O", MODEL_PATH],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            logger.info(f"Subprocess output: {result.stdout}")
+            if os.path.exists(MODEL_PATH) and os.path.getsize(MODEL_PATH) > 1000000:
+                logger.info(f"Successfully downloaded model using subprocess: {os.path.getsize(MODEL_PATH)} bytes")
+                return True
+        except subprocess.CalledProcessError as e:
+            logger.warning(f"Subprocess error: {e.stderr}")
+        
+        # If all else fails, create a simple mock model
+        logger.warning("All download attempts failed, falling back to mock model")
+        return False
+        
+    except Exception as e:
+        logger.error(f"Error downloading model: {e}")
+        return False
 
 # Function to create a simple mock model when the real model is unavailable
 def create_mock_model():
@@ -92,9 +140,13 @@ def load_model_in_background():
                 json.dump(class_indices, f, indent=2)
             logger.info(f"Created default class indices file: {class_indices}")
             
+        # Download model if it doesn't exist
+        logger.info("Checking if model needs to be downloaded")
+        model_download_success = download_model_from_gdrive()
+            
         # Check if model exists and is valid
         logger.info(f"Checking model at {MODEL_PATH}")
-        if os.path.exists(MODEL_PATH) and os.path.getsize(MODEL_PATH) > 1000000:  # >1MB
+        if model_download_success and os.path.exists(MODEL_PATH) and os.path.getsize(MODEL_PATH) > 1000000:  # >1MB
             logger.info(f"Loading model from {MODEL_PATH}")
             model = tf.keras.models.load_model(MODEL_PATH, compile=False)
             logger.info("Model loaded successfully")
