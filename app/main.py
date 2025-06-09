@@ -6,6 +6,7 @@ import sys
 import socket
 import threading
 import time
+import signal
 
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
@@ -26,36 +27,95 @@ logger.info(f"Current directory: {os.getcwd()}")
 logger.info(f"Environment PORT: {os.environ.get('PORT')}")
 logger.info(f"Settings PORT: {settings.PORT}")
 
+# Global socket variable to keep reference for cleanup
+early_socket = None
+
 # Early port binding to help Render detect the service
 def create_early_socket_binding():
+    global early_socket
     try:
         # Create a socket that will be detected by Render's port scanner
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        s.bind(('0.0.0.0', settings.PORT))
-        s.listen(1)
+        early_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        early_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        early_socket.bind(('0.0.0.0', settings.PORT))
+        early_socket.listen(5)
         logger.info(f"Created early socket binding on port {settings.PORT}")
         
-        # Keep the socket open for a few seconds to ensure Render detects it
-        # Then close it so uvicorn can bind to the same port
-        def close_socket_after_delay():
-            time.sleep(5)
-            s.close()
-            logger.info(f"Closed early socket binding on port {settings.PORT}")
+        # Create a simple handler that sends a response to any connection
+        def handle_connections():
+            while True:
+                try:
+                    # Accept connection with a 1-second timeout
+                    early_socket.settimeout(1)
+                    try:
+                        conn, addr = early_socket.accept()
+                        logger.info(f"Received early connection from {addr}")
+                        try:
+                            conn.send(b"HTTP/1.1 200 OK\r\nContent-Length: 4\r\n\r\npong")
+                        finally:
+                            conn.close()
+                    except socket.timeout:
+                        pass
+                except Exception as e:
+                    if early_socket is None:  # Socket was closed
+                        break
+                    logger.error(f"Error in socket connection handler: {e}")
         
-        thread = threading.Thread(target=close_socket_after_delay)
-        thread.daemon = True
-        thread.start()
+        # Start a thread to handle connections
+        socket_thread = threading.Thread(target=handle_connections, daemon=True)
+        socket_thread.start()
+        logger.info("Started early socket connection handler thread")
         
-        # Also write a file that Render can check
+        # Write a file that Render can check
         with open("/tmp/port_bound.txt", "w") as f:
             f.write(f"PORT {settings.PORT} bound at {time.time()}\n")
+            
+        # Register a function to close the socket when uvicorn binds to the port
+        def close_socket_when_app_starts():
+            # Wait for 60 seconds before closing the early socket
+            # This ensures Render has plenty of time to detect the port
+            time.sleep(60)
+            global early_socket
+            if early_socket:
+                logger.info(f"Closing early socket binding on port {settings.PORT}")
+                s = early_socket
+                early_socket = None
+                try:
+                    s.close()
+                except Exception as e:
+                    logger.error(f"Error closing early socket: {e}")
+        
+        # Start a thread to close the socket after delay
+        closer_thread = threading.Thread(target=close_socket_when_app_starts, daemon=True)
+        closer_thread.start()
+        
     except Exception as e:
         logger.error(f"Error creating early socket binding: {e}")
+
+# Create signal handlers for graceful shutdown
+def setup_signal_handlers():
+    def handle_sigterm(signum, frame):
+        logger.info("Received SIGTERM signal, shutting down gracefully")
+        # Close early socket if still open
+        global early_socket
+        if early_socket:
+            try:
+                logger.info("Closing early socket binding during shutdown")
+                early_socket.close()
+                early_socket = None
+            except Exception as e:
+                logger.error(f"Error closing early socket during shutdown: {e}")
+        # Exit gracefully
+        sys.exit(0)
+    
+    # Register signal handlers
+    signal.signal(signal.SIGTERM, handle_sigterm)
+    logger.info("Registered signal handlers for graceful shutdown")
 
 # Attempt early port binding if not running in debug mode
 if not os.environ.get("DEBUG"):
     create_early_socket_binding()
+    setup_signal_handlers()
 
 # Base directory of this module
 BASE_DIR = Path(__file__).parent
@@ -128,6 +188,20 @@ async def on_startup():
         logger.error(f"Error during startup: {e}")
         # Raise to ensure the app doesn't silently fail
         raise
+
+@app.on_event("shutdown")
+async def on_shutdown():
+    logger.info("Application shutting down")
+    # Close the early socket if it's still open
+    global early_socket
+    if early_socket:
+        try:
+            logger.info("Closing early socket binding during shutdown")
+            early_socket.close()
+            early_socket = None
+        except Exception as e:
+            logger.error(f"Error closing early socket during shutdown: {e}")
+    logger.info("Shutdown complete")
 
 @app.get("/")
 async def root():
