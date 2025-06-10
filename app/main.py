@@ -65,9 +65,11 @@ def create_early_socket_binding():
         socket_thread = threading.Thread(target=handle_connections, daemon=True)
         socket_thread.start()
         logger.info("Started early socket connection handler thread")
-        
+
+        file = os.path.dirname(__file__)
+        file = file[0:file.find("\\app")]
         # Write a file that Render can check
-        with open("/tmp/port_bound.txt", "w") as f:
+        with open(f"{file}\\tmp\\port_bound.txt", "w") as f:
             f.write(f"PORT {settings.PORT} bound at {time.time()}\n")
             
         # Register a function to close the socket when uvicorn binds to the port
@@ -180,7 +182,12 @@ async def on_startup():
                 json.dump(CLASS_INDICES, f, indent=2)
         
         # Write port info to a file that Render can detect
-        with open("/tmp/render_port_info", "w") as f:
+        print(f"Path is {os.path.dirname(__file__)}/tmp/render_port_info.txt")
+        file = os.path.dirname(__file__)
+        file = file[0:file.find("\\app")]
+        print(f"Path is {file}")
+
+        with open(f"{file}\\tmp\\render_port_info.txt", "w") as f:
             f.write(f"PORT={settings.PORT}\n")
             
         logger.info(f"Application startup complete. Running on {settings.HOST}:{settings.PORT}")

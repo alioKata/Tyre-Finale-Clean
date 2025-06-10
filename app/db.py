@@ -19,8 +19,8 @@ AsyncSessionLocal = sessionmaker(
 Base = declarative_base()
 
 # Import models for SQLAlchemy to recognize them
-import app.models.user
-import app.models.verification
+# import app.models.user
+# import app.models.verification
 import app.models.tire
 
 async def migrate_add_fuel_data():
