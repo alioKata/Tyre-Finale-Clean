@@ -27,3 +27,13 @@ EOF
 
 chmod +x port_opener.py
 exec python port_opener.py
+
+HOST=0.0.0.0
+PORT=${PORT:-10000}
+
+echo "Starting FastAPI on ${HOST}:${PORT}"
+exec uvicorn app.main:app \
+     --host "$HOST" \
+     --port "$PORT" \
+     --lifespan on \
+     --workers 1
