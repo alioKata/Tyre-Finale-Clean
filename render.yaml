@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: aliproject
+    name: tyre-finale-clean
     runtime: python
     buildCommand: chmod +x build.sh && ./build.sh
     startCommand: chmod +x start.sh && ./start.sh
