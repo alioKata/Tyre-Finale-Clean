@@ -28,12 +28,18 @@ set -euo pipefail
 # chmod +x port_opener.py
 # exec python port_opener.py
 
-HOST=0.0.0.0
-PORT=${PORT:-10000}
-
-echo "Starting FastAPI on ${HOST}:${PORT}"
-exec uvicorn app.main:app \
-     --host "$HOST" \
-     --port "$PORT" \
-     --lifespan on \
-     --workers 1
+# If Render is invoking us, RENDER will be set
+if [[ -n "${RENDER:-}" ]]; then
+  HOST="0.0.0.0"
+  PORT="${PORT:-10000}"
+  echo "🚀 Render detects RENDER env; starting FastAPI on ${HOST}:${PORT}"
+  exec uvicorn app.main:app \
+       --host "$HOST" \
+       --port "$PORT" \
+       --lifespan on \
+       --workers 1
+else
+  echo "☁️  start.sh is a production entrypoint; to run locally use:"
+  echo "    uvicorn app.main:app --reload --host 127.0.0.1 --port 8000"
+  exit 0
+fi

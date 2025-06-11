@@ -61,10 +61,10 @@ echo "Created class_indices.json file"
 
 # 3. Install gdown for on-demand model downloads
 pip install gdown
-echo "Installed gdown for on-demand model downloading"
+# echo "Installed gdown for on-demand model downloading"
 
-# 4. Ensure start.sh is executable
-chmod +x start.sh
+# # 4. Ensure start.sh is executable
+# chmod +x start.sh
 
 # 5. Create storage dirs
 mkdir -p data/users
